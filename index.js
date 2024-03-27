@@ -1,4 +1,5 @@
 const puppeteer = require('puppeteer');
+const fs = require("fs")
 
 class WebScrapper{
     
@@ -23,10 +24,43 @@ class WebScrapper{
             await this.GetPaginationCount();
             console.log({NumberOfPages: this.paginationData})
             if(!this.paginationData) return;
-            const count = await this.CollectData();
-            console.log({NumberOfCarsCollected: count.length});
+            const dataArr = await this.CollectData();
+            console.log({NumberOfCarsCollected: dataArr.length});
+            this.WriteIntoFile(dataArr);
             resolve()
         }, 5000)) 
+    }
+
+    async WriteIntoFile(newData){
+        if(!newData) return;
+        const fileName = "Result.json";
+
+        fs.readFile('./'+fileName, 'utf-8', (err, data)=>{
+            if(err){
+                fs.writeFile("./"+fileName, JSON.stringify({ car: newData }), 'utf8', (err) => {
+                    if (err) {
+                      console.error('Error creating file:', err);
+                    } else {
+                      console.log('File created with new data.');
+                    }
+                });
+            }else{
+                // Parse the existing JSON data
+                let existingData = JSON.parse(data);
+                
+                // Append the new data to the existing array under the "car" key
+                existingData.car = existingData.car.concat(newData);
+                
+                // Write the updated data back to the file
+                fs.writeFile("./"+fileName, JSON.stringify(existingData), 'utf8', (err) => {
+                    if (err) {
+                        console.error('Error writing to file:', err);
+                    } else {
+                        console.log('Data appended to file.');
+                    }
+                });
+            }
+        })
     }
 
     async GetPaginationCount(){
